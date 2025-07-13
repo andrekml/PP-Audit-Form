@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workorder Data Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 15px;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-section h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #3498db;
+            text-transform: capitalize;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            min-width: 150px;
+            transition: background-color 0.3s;
+        }
+        #saveEntry {
+            background-color: #3498db;
+        }
+        #saveEntry:hover {
+            background-color: #2980b9;
+        }
+        #saveAsExcel {
+            background-color: #27ae60;
+        }
+        #saveAsExcel:hover {
+            background-color: #219653;
+        }
+        #resetForm {
+            background-color: #e74c3c;
+        }
+        #resetForm:hover {
+            background-color: #c0392b;
+        }
+        #viewEntries {
+            background-color: #9b59b6;
+        }
+        #viewEntries:hover {
+            background-color: #8e44ad;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 900px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        #entriesTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        #entriesTable th, #entriesTable td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        #entriesTable th {
+            background-color: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        #entriesTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #entriesTable tr:hover {
+            background-color: #f1f1f1;
+        }
+        .action-btn {
+            padding: 6px 12px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: opacity 0.3s;
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+        .edit-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .export-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: #999;
+        }
+        .required-field::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        .error-border {
+            border-color: #e74c3c !important;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                width: 95%;
+            }
+            button {
+                min-width: 120px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Workorder Data Capture</h1>
+        
+        <form id="dataForm">
+            <input type="hidden" id="entryId">
+            
+            <div class="form-section">
+                <h2>Basic Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="workorderNo">Workorder Number:</label>
+                        <input type="text" id="workorderNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="zone">Zone:</label>
+                        <input type="text" id="zone">
+                    </div>
+                    <div class="form-group">
+                        <label for="sector">Sector:</label>
+                        <input type="text" id="sector">
+                    </div>
+                    <div class="form-group">
+                        <label for="cnc">CNC:</label>
+                        <input type="text" id="cnc">
+                    </div>
+                    <div class="form-group">
+                        <label for="contractorName">Contractor Name/Source:</label>
+                        <input type="text" id="contractorName">
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date:</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div class="form-group">
+                        <label for="feederName">Feeder Name:</label>
+                        <input type="text" id="feederName">
+                    </div>
+                    <div class="form-group">
+                        <label for="townshipName">Township Name:</label>
+                        <input type="text" id="townshipName">
+                    </div>
+                    <div class="form-group">
+                        <label for="transformerNo" class="required-field">Transformer Number:</label>
+                        <input type="text" id="transformerNo" required>
+                        <div class="error-message" id="transformerNo-error">This field is required</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="standNo">Stand Number:</label>
+                        <input type="text" id="standNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="installationNo">Installation Number:</label>
+                        <input type="text" id="installationNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="latitude" class="required-field">Latitude:</label>
+                        <input type="text" id="latitude" required>
+                        <div class="error-message" id="latitude-error">This field is required</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="longitude" class="required-field">Longitude:</label>
+                        <input type="text" id="longitude" required>
+                        <div class="error-message" id="longitude-error">This field is required</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Access & Status</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="access">Access:</label>
+                        <select id="access">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="atHome">At Home:</label>
+                        <select id="atHome">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="connected">Connected:</label>
+                        <select id="connected">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="abandoned">Abandoned:</label>
+                        <select id="abandoned">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vandalised">Vandalised:</label>
+                        <select id="vandalised">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="illegal">Illegal:</label>
+                        <select id="illegal">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="owner">Owner:</label>
+                        <select id="owner">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Customer Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="surname">Surname:</label>
+                        <input type="text" id="surname">
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="idNo">ID Number:</label>
+                        <input type="text" id="idNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneCode">Phone Code:</label>
+                        <input type="text" id="phoneCode">
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNo">Phone Number:</label>
+                        <input type="text" id="phoneNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="normalVendor">Normal Vendor:</label>
+                        <select id="normalVendor">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mostRecentVendor">Most Recent Vendor:</label>
+                        <input type="text" id="mostRecentVendor">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Meter Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="meterNo">Meter Number:</label>
+                        <input type="text" id="meterNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="split">Split:</label>
+                        <select id="split">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="commonBaseMeter">Common/Non Common Base Meter:</label>
+                        <input type="text" id="commonBaseMeter">
+                    </div>
+                    <div class="form-group">
+                        <label for="edEcu">ED/ECU:</label>
+                        <input type="text" id="edEcu">
+                    </div>
+                    <div class="form-group">
+                        <label for="meterType">Meter Type:</label>
+                        <input type="text" id="meterType">
+                    </div>
+                    <div class="form-group">
+                        <label for="tariffCode">Tariff Code:</label>
+                        <input type="text" id="tariffCode">
+                    </div>
+                    <div class="form-group">
+                        <label for="ampLimit">Amp Limit:</label>
+                        <input type="text" id="ampLimit">
+                    </div>
+                    <div class="form-group">
+                        <label for="supplyGroupCode">Supply Group Code:</label>
+                        <input type="text" id="supplyGroupCode">
+                    </div>
+                    <div class="form-group">
+                        <label for="magCardKeypad">Mag Card/Keypad:</label>
+                        <input type="text" id="magCardKeypad">
+                    </div>
+                    <div class="form-group">
+                        <label for="stsProp">STS Or Prop:</label>
+                        <input type="text" id="stsProp">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Tamper Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="tampered">Tampered:</label>
+                        <select id="tampered">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tamperMethod">Tamper Method:</label>
+                        <input type="text" id="tamperMethod">
+                    </div>
+                    <div class="form-group">
+                        <label for="removed">Removed:</label>
+                        <select id="removed">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tamperNotNo">Tamper Not Number:</label>
+                        <input type="text" id="tamperNotNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="cardTrip">Card Trip:</label>
+                        <select id="cardTrip">
+                            <option value="">Select</option>
+                            <option value="Pass">Pass</option>
+                            <option value="Fail">Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="elTest">E/L Test:</label>
+                        <select id="elTest">
+                            <option value="">Select</option>
+                            <option value="Pass">Pass</option>
+                            <option value="Fail">Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="meterFaulty">Meter Faulty:</label>
+                        <select id="meterFaulty">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="replaced">Replaced:</label>
+                        <select id="replaced">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>New Meter Information (If Replaced)</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="mmfNo">MMF Number:</label>
+                        <input type="text" id="mmfNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="newMeterNo">New Meter Number:</label>
+                        <input type="text" id="newMeterNo">
+                    </div>
+                    <div class="form-group">
+                        <label for="newMeterType">New Meter Type:</label>
+                        <input type="text" id="newMeterType">
+                    </div>
+                    <div class="form-group">
+                        <label for="newMeterAmpLimit">New Meter Amp Limit:</label>
+                        <input type="text" id="newMeterAmpLimit">
+                    </div>
+                    <div class="form-group">
+                        <label for="newMeterCardTrip">New Meter Card Trip:</label>
+                        <select id="newMeterCardTrip">
+                            <option value="">Select</option>
+                            <option value="Pass">Pass</option>
+                            <option value="Fail">Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMeterElTest">New Meter E/L Test:</label>
+                        <select id="newMeterElTest">
+                            <option value="">Select</option>
+                            <option value="Pass">Pass</option>
+                            <option value="Fail">Fail</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sealed">Sealed:</label>
+                        <select id="sealed">
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sealNo">Seal Number:</label>
+                        <input type="text" id="sealNo">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Remarks</h2>
+                <div class="form-group">
+                    <label for="remarks">Remarks:</label>
+                    <textarea id="remarks"></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="saveEntry">Save Entry</button>
+                <button type="button" id="viewEntries">View Entries</button>
+                <button type="button" id="saveAsExcel">Export To Excel</button>
+                <button type="reset" id="resetForm">Reset Form</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal for viewing entries -->
+    <div id="entriesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Saved Entries</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search entries...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <div class="table-container">
+                <table id="entriesTable">
+                    <thead>
+                        <tr>
+                            <th>Workorder Number</th>
+                            <th>Date</th>
+                            <th>Contractor</th>
+                            <th>Transformer Number</th>
+                            <th>GPS Coordinates</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entriesTableBody">
+                        <!-- Entries will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize entries array from localStorage or create empty array
+        let entries = JSON.parse(localStorage.getItem('workorderEntries')) || [];
+        let currentEditId = null;
+
+        // Validate required fields
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = [
+                'transformerNo', 
+                'latitude', 
+                'longitude'
+            ];
+
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field);
+                const errorElement = document.getElementById(`${field}-error`);
+                if (!element.value.trim()) {
+                    element.classList.add('error-border');
+                    errorElement.style.display = 'block';
+                    isValid = false;
+                } else {
+                    element.classList.remove('error-border');
+                    errorElement.style.display = 'none';
+                }
+            });
+
+            return isValid;
+        }
+
+        // Save entry to local storage
+        document.getElementById('saveEntry').addEventListener('click', function() {
+            if (!validateForm()) {
+                alert('Please fill in all required fields (marked with *)');
+                return;
+            }
+
+            const formData = collectFormData();
+            
+            if (currentEditId !== null) {
+                // Update existing entry
+                const index = entries.findIndex(entry => entry.id === currentEditId);
+                if (index !== -1) {
+                    entries[index] = formData;
+                    alert('Entry updated successfully!');
+                }
+            } else {
+                // Add new entry
+                formData.id = Date.now().toString(); // Simple unique ID
+                entries.push(formData);
+                alert('Entry saved successfully!');
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('workorderEntries', JSON.stringify(entries));
+            
+            // Reset form
+            document.getElementById('dataForm').reset();
+            document.getElementById('entryId').value = '';
+            currentEditId = null;
+        });
+
+        // View saved entries
+        document.getElementById('viewEntries').addEventListener('click', function() {
+            displayEntries();
+            document.getElementById('entriesModal').style.display = 'block';
+        });
+
+        // Close modal
+        document.querySelector('.close').addEventListener('click', function() {
+            document.getElementById('entriesModal').style.display = 'none';
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredEntries = entries.filter(entry => 
+                (entry.workorderNo && entry.workorderNo.toLowerCase().includes(searchTerm)) ||
+                (entry.date && entry.date.toLowerCase().includes(searchTerm)) ||
+                (entry.contractorName && entry.contractorName.toLowerCase().includes(searchTerm)) ||
+                (entry.transformerNo && entry.transformerNo.toLowerCase().includes(searchTerm))
+            );
+            displayEntries(filteredEntries);
+        });
+
+        // Export to Excel with auto-capitalization and professional formatting
+        document.getElementById('saveAsExcel').addEventListener('click', function() {
+            if (entries.length === 0) {
+                alert('No entries to export!');
+                return;
+            }
+
+            // Load SheetJS library if not already loaded
+            if (typeof XLSX === 'undefined') {
+                alert('Excel export feature is still loading. Please try again in a moment.');
+                return;
+            }
+
+            // Create Excel workbook with multiple sheets
+            const workbook = XLSX.utils.book_new();
+            
+            // Process data with auto-capitalization
+            const mainData = entries.map(entry => {
+                const formattedEntry = {};
+                Object.keys(entry).forEach(key => {
+                    if (key !== 'id') {
+                        let value = entry[key] || '';
+                        
+                        // Auto-capitalize first letter of each word for text fields
+                        if (typeof value === 'string' && value.length > 0) {
+                            // Skip capitalization for these fields:
+                            const skipCapitalize = ['workorderNo', 'meterNo', 'newMeterNo', 'tariffCode', 
+                                                  'supplyGroupCode', 'tamperNotNo', 'mmfNo', 'sealNo',
+                                                  'phoneCode', 'phoneNo', 'idNo', 'date', 'latitude',
+                                                  'longitude', 'transformerNo'];
+                                                  
+                            if (!skipCapitalize.includes(key)) {
+                                value = value.toLowerCase()
+                                    .split(' ')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(' ');
+                            }
+                        }
+                        
+                        // Format dates properly
+                        if (key === 'date' && value) {
+                            formattedEntry[key] = new Date(value);
+                        } else {
+                            formattedEntry[key] = value;
+                        }
+                    }
+                });
+                return formattedEntry;
+            });
+
+            // Create worksheet with auto-width columns
+            const mainWorksheet = XLSX.utils.json_to_sheet(mainData);
+            
+            // Capitalize headers in the worksheet
+            const range = XLSX.utils.decode_range(mainWorksheet['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const address = XLSX.utils.encode_col(C) + "1"; // First row is headers
+                if (!mainWorksheet[address]) continue;
+                
+                // Convert camelCase to proper capitalization with spaces
+                let header = mainWorksheet[address].v;
+                header = header
+                    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                    .trim();
+                
+                mainWorksheet[address].v = header;
+                mainWorksheet[address].t = 's'; // Ensure it's stored as string
+            }
+            
+            // Set column widths based on content
+            const colWidths = [];
+            const headerKeys = Object.keys(mainData[0]);
+            headerKeys.forEach(key => {
+                const maxLength = Math.max(
+                    key.replace(/([A-Z])/g, ' $1').length + 1, // Account for added spaces
+                    ...mainData.map(row => (row[key] ? row[key].toString().length : 0))
+                );
+                colWidths.push({ wch: Math.min(Math.max(maxLength, 10), 30) });
+            });
+            
+            mainWorksheet['!cols'] = colWidths;
+            
+            // Add worksheet to workbook with capitalized sheet name
+            XLSX.utils.book_append_sheet(workbook, mainWorksheet, "Workorders");
+            
+            // Summary sheet with improved formatting
+            const summaryData = [
+                ["WORKORDER DATA REPORT", "", "", "", ""],
+                ["", "", "", "", ""],
+                ["Report Summary", "", "", "", ""],
+                ["Total Entries", entries.length, "", "", ""],
+                ["Generated On", new Date().toLocaleString(), "", "", ""],
+                ["", "", "", "", ""],
+                ["Field Name", "Non-empty Count", "Sample Value", "", ""],
+                ...Object.keys(entries[0])
+                    .filter(key => key !== 'id')
+                    .map(key => {
+                        const nonEmptyEntries = entries.filter(entry => entry[key] && entry[key].toString().trim() !== '');
+                        const sampleValue = nonEmptyEntries.length > 0 ? nonEmptyEntries[0][key] : '';
+                        return [
+                            key.replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                               .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                               .trim(),
+                            nonEmptyEntries.length,
+                            sampleValue,
+                            "",
+                            ""
+                        ];
+                    })
+            ];
+            
+            const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
+            
+            // Format summary sheet
+            summaryWorksheet['!cols'] = [
+                { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 10 }
+            ];
+            
+            // Add header styling
+            const headerStyle = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "3498db" } } };
+            for (let i = 0; i < 7; i++) {
+                if (!summaryWorksheet[`A${i+1}`]) continue;
+                if (!summaryWorksheet[`A${i+1}`].s) summaryWorksheet[`A${i+1}`].s = {};
+                Object.assign(summaryWorksheet[`A${i+1}`].s, headerStyle);
+            }
+            
+            XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Summary");
+            
+            // Generate Excel file
+            const excelBuffer = XLSX.write(workbook, { 
+                bookType: 'xlsx', 
+                type: 'array',
+                cellStyles: true 
+            });
+            
+            saveAsExcelFile(excelBuffer, `Workorder_Data_${formatDate(new Date())}.xlsx`);
+        });
+
+        // Helper function to save Excel file with auto-capitalization
+        function saveAsExcelFile(buffer, fileName) {
+            // Auto-capitalize filename
+            fileName = fileName
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ')
+                .replace('.xlsx', '') + '.xlsx';
+            
+            const data = new Blob([buffer], { 
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            
+            const url = URL.createObjectURL(data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Format date for filename
+        function formatDate(date) {
+            const d = new Date(date);
+            return [
+                d.getFullYear(),
+                (d.getMonth() + 1).toString().padStart(2, '0'),
+                d.getDate().toString().padStart(2, '0')
+            ].join('-');
+        }
+
+        // Reset form
+        document.getElementById('resetForm').addEventListener('click', function() {
+            if(confirm('Are you sure you want to reset all fields?')) {
+                document.getElementById('dataForm').reset();
+                document.getElementById('entryId').value = '';
+                currentEditId = null;
+                
+                // Clear error states
+                document.querySelectorAll('.error-border').forEach(el => {
+                    el.classList.remove('error-border');
+                });
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        });
+
+        // Helper function to collect form data
+        function collectFormData() {
+            const formData = {
+                id: document.getElementById('entryId').value || Date.now().toString(),
+                workorderNo: document.getElementById('workorderNo').value,
+                zone: document.getElementById('zone').value,
+                sector: document.getElementById('sector').value,
+                cnc: document.getElementById('cnc').value,
+                contractorName: document.getElementById('contractorName').value,
+                date: document.getElementById('date').value,
+                feederName: document.getElementById('feederName').value,
+                townshipName: document.getElementById('townshipName').value,
+                transformerNo: document.getElementById('transformerNo').value,
+                standNo: document.getElementById('standNo').value,
+                installationNo: document.getElementById('installationNo').value,
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                access: document.getElementById('access').value,
+                atHome: document.getElementById('atHome').value,
+                connected: document.getElementById('connected').value,
+                abandoned: document.getElementById('abandoned').value,
+                vandalised: document.getElementById('vandalised').value,
+                illegal: document.getElementById('illegal').value,
+                owner: document.getElementById('owner').value,
+                surname: document.getElementById('surname').value,
+                name: document.getElementById('name').value,
+                idNo: document.getElementById('idNo').value,
+                phoneCode: document.getElementById('phoneCode').value,
+                phoneNo: document.getElementById('phoneNo').value,
+                normalVendor: document.getElementById('normalVendor').value,
+                mostRecentVendor: document.getElementById('mostRecentVendor').value,
+                meterNo: document.getElementById('meterNo').value,
+                split: document.getElementById('split').value,
+                commonBaseMeter: document.getElementById('commonBaseMeter').value,
+                edEcu: document.getElementById('edEcu').value,
+                meterType: document.getElementById('meterType').value,
+                tariffCode: document.getElementById('tariffCode').value,
+                ampLimit: document.getElementById('ampLimit').value,
+                supplyGroupCode: document.getElementById('supplyGroupCode').value,
+                magCardKeypad: document.getElementById('magCardKeypad').value,
+                stsProp: document.getElementById('stsProp').value,
+                tampered: document.getElementById('tampered').value,
+                tamperMethod: document.getElementById('tamperMethod').value,
+                removed: document.getElementById('removed').value,
+                tamperNotNo: document.getElementById('tamperNotNo').value,
+                cardTrip: document.getElementById('cardTrip').value,
+                elTest: document.getElementById('elTest').value,
+                meterFaulty: document.getElementById('meterFaulty').value,
+                replaced: document.getElementById('replaced').value,
+                mmfNo: document.getElementById('mmfNo').value,
+                newMeterNo: document.getElementById('newMeterNo').value,
+                newMeterType: document.getElementById('newMeterType').value,
+                newMeterAmpLimit: document.getElementById('newMeterAmpLimit').value,
+                newMeterCardTrip: document.getElementById('newMeterCardTrip').value,
+                newMeterElTest: document.getElementById('newMeterElTest').value,
+                sealed: document.getElementById('sealed').value,
+                sealNo: document.getElementById('sealNo').value,
+                remarks: document.getElementById('remarks').value
+            };
+            
+            return formData;
+        }
+
+        // Helper function to display entries in the modal
+        function displayEntries(entriesToDisplay = null) {
+            const entriesToShow = entriesToDisplay || entries;
+            const tableBody = document.getElementById('entriesTableBody');
+            tableBody.innerHTML = '';
+
+            if (entriesToShow.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="6" style="text-align: center;">No entries found</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+
+            entriesToShow.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.workorderNo || 'N/A'}</td>
+                    <td>${entry.date || ''}</td>
+                    <td>${entry.contractorName || ''}</td>
+                    <td>${entry.transformerNo || ''}</td>
+                    <td>${entry.latitude ? entry.latitude + ', ' + entry.longitude : ''}</td>
+                    <td>
+                        <button class="action-btn edit-btn" data-id="${entry.id}">Edit</button>
+                        <button class="action-btn delete-btn" data-id="${entry.id}">Delete</button>
+                        <button class="action-btn export-btn" data-id="${entry.id}">Export</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Add event listeners to action buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    editEntry(this.getAttribute('data-id'));
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    deleteEntry(this.getAttribute('data-id'));
+                });
+            });
+
+            document.querySelectorAll('.export-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    exportSingleEntry(this.getAttribute('data-id'));
+                });
+            });
+        }
+
+        // Helper function to edit an entry
+        function editEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            if (!entry) return;
+
+            currentEditId = id;
+            document.getElementById('entryId').value = id;
+
+            // Populate form fields
+            Object.keys(entry).forEach(key => {
+                if (key !== 'id' && document.getElementById(key)) {
+                    document.getElementById(key).value = entry[key] || '';
+                }
+            });
+
+            // Close modal
+            document.getElementById('entriesModal').style.display = 'none';
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Helper function to delete an entry
+        function deleteEntry(id) {
+            if (!confirm('Are you sure you want to delete this entry?')) return;
+
+            entries = entries.filter(entry => entry.id !== id);
+            localStorage.setItem('workorderEntries', JSON.stringify(entries));
+            displayEntries();
+        }
+
+        // Helper function to export a single entry
+        function exportSingleEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            if (!entry) return;
+
+            // Create a workbook with just this entry
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet([entry]);
+            
+            // Capitalize headers in the worksheet
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const address = XLSX.utils.encode_col(C) + "1"; // First row is headers
+                if (!worksheet[address]) continue;
+                
+                // Convert camelCase to proper capitalization with spaces
+                let header = worksheet[address].v;
+                header = header
+                    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                    .trim();
+                
+                worksheet[address].v = header;
+                worksheet[address].t = 's'; // Ensure it's stored as string
+            }
+            
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Workorder");
+
+            // Generate Excel file
+            const excelBuffer = XLSX.write(workbook, { 
+                bookType: 'xlsx', 
+                type: 'array',
+                cellStyles: true 
+            });
+            
+            saveAsExcelFile(excelBuffer, `Workorder_${entry.workorderNo || id}_${formatDate(new Date())}.xlsx`);
+        }
+
+        // Load SheetJS library for Excel export
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = function() {
+            console.log('SheetJS library loaded');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
